@@ -3,11 +3,14 @@ set cpo&vim
 
 let g:unite_source_go_import_go_command = get(g:, 'unite_source_go_import_go_command', 'go')
 let g:unite_source_go_import_disable_cache = get(g:, 'unite_source_go_import_disable_cache', 0)
+let g:unite_source_go_import_min_input = get(g:, 'unite_source_go_import_min_input', 3)
+let g:unite_source_go_import_search_filename = get(g:, 'unite_source_go_import_search_filename', 1)
 
 let s:source = {
             \   'name' : 'go/import',
             \   'description' : 'Go packages to import',
             \   'default_action' : {'common' : 'import'},
+            \   'required_pattern_length' : g:unite_source_go_import_min_input,
             \   'action_table' : {},
             \ }
 
