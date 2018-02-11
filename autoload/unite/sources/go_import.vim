@@ -7,14 +7,17 @@ let g:unite_source_go_import_min_input = get(g:, 'unite_source_go_import_min_inp
 let g:unite_source_go_import_search_filename = get(g:, 'unite_source_go_import_search_filename', 1)
 
 let s:source = {
-            \   'name' : 'go/import',
-            \   'description' : 'Go packages to import',
-            \   'default_action' : {'common' : 'import'},
-            \   'required_pattern_length' : g:unite_source_go_import_min_input,
-            \   'action_table' : {},
-            \ }
+    \   'name' : 'go/import',
+    \   'hooks': {},
+    \   'description' : 'Go packages to import',
+    \   'default_action' : {'common' : 'import'},
+    \   'action_table' : {},
+    \   'is_volatile': 1,
+    \ }
 
+let s:cached_result = []
 let s:previous_result = []
+let s:previous_input = ""
 
 function! unite#sources#go_import#define() abort
     if s:cmd_for('import') ==# ''
@@ -24,7 +27,9 @@ function! unite#sources#go_import#define() abort
 endfunction
 
 function! unite#sources#go_import#reset_cache() abort
+    let s:cached_result = []
     let s:previous_result = []
+    let s:previous_input = ""
 endfunction
 
 if $GOOS != ''
@@ -131,14 +136,21 @@ function! s:cmd_for(name) abort
     return ''
 endfunction
 
+function! s:source.hooks.on_close(args, context) 
+    call unite#filters#matcher_py_fuzzy#clean(a:context)
+endfunction
+
 function! s:source.gather_candidates(args, context) abort
     if ! g:unite_source_go_import_disable_cache &&
-                \ (empty(s:previous_result) || a:args == ['!'])
-        let s:previous_result = map(s:go_packages(), '{
-                                        \ "word" : v:val,
-                                        \ }')
+                \ (empty(s:cached_result) || a:args == ['!'])
+        let s:cached_result = s:go_packages()
     endif
-    return s:previous_result
+
+    let a:context.mmode = "path"
+    let result = unite#filters#matcher_py_fuzzy#matcher(a:context, s:cached_result)
+    echo result[0]
+
+    return map(result, '{ "word" : v:val, }')
 endfunction
 
 let s:source.action_table.import = {
