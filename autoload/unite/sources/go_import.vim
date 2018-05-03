@@ -147,7 +147,7 @@ function! s:source.gather_candidates(args, context) abort
     endif
 
     let a:context.mmode = "path"
-    let result = unite#filters#matcher_py_fuzzy#matcher(a:context, s:cached_result)
+    let result = unite#filters#matcher_py_fuzzy#matcher(a:context, s:cached_result, 1)
     echo result[0]
 
     return map(result, '{ "word" : v:val, }')
