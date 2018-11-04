@@ -5,6 +5,8 @@ let g:unite_source_go_import_go_command = get(g:, 'unite_source_go_import_go_com
 let g:unite_source_go_import_disable_cache = get(g:, 'unite_source_go_import_disable_cache', 0)
 let g:unite_source_go_import_min_input = get(g:, 'unite_source_go_import_min_input', 3)
 let g:unite_source_go_import_search_filename = get(g:, 'unite_source_go_import_search_filename', 1)
+let g:unite_source_go_import_cache_path = get(g:, 'unite_source_go_import_cache_path', '')
+let g:unite_source_go_import_max_candidates = get(g:, 'unite_source_go_import_max_candidates', 20)
 
 let s:source = {
     \   'name' : 'go/import',
@@ -16,20 +18,12 @@ let s:source = {
     \ }
 
 let s:cached_result = []
-let s:previous_result = []
-let s:previous_input = ""
 
 function! unite#sources#go_import#define() abort
     if s:cmd_for('import') ==# ''
         return {}
     endif
     return s:source
-endfunction
-
-function! unite#sources#go_import#reset_cache() abort
-    let s:cached_result = []
-    let s:previous_result = []
-    let s:previous_input = ""
 endfunction
 
 if $GOOS != ''
@@ -136,19 +130,31 @@ function! s:cmd_for(name) abort
     return ''
 endfunction
 
+function! s:source.hooks.on_init(args, context)
+    if filereadable(g:unite_source_go_import_cache_path) 
+        let s:cached_result = readfile(g:unite_source_go_import_cache_path)
+        " echomsg "Load from cache file"
+    endif
+endfunction
+
 function! s:source.hooks.on_close(args, context) 
     call unite#filters#matcher_py_fuzzy#clean(a:context)
 endfunction
 
 function! s:source.gather_candidates(args, context) abort
-    if ! g:unite_source_go_import_disable_cache &&
-                \ (empty(s:cached_result) || a:args == ['!'])
+    if !g:unite_source_go_import_disable_cache &&
+        \ (empty(s:cached_result) || a:args == ['!'] || a:context.is_redraw)
         let s:cached_result = s:go_packages()
+        if g:unite_source_go_import_cache_path != ''
+            call writefile(s:cached_result, g:unite_source_go_import_cache_path)
+        endif
     endif
 
     let a:context.mmode = "path"
     let result = unite#filters#matcher_py_fuzzy#matcher(a:context, s:cached_result, 1)
-    echo result[0]
+    if len(result) > g:unite_source_go_import_max_candidates 
+        let result = result[0:g:unite_source_go_import_max_candidates - 1]
+    endif
 
     return map(result, '{ "word" : v:val, }')
 endfunction
