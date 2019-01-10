@@ -54,6 +54,9 @@ function! s:go_packages() abort
     if executable('gopkgs')
       " https://github.com/haya14busa/gopkgs
       return split(system('gopkgs'), "\n")
+    else
+        echoerr "Please install gopkgs"
+        return []
     endif
 
     let dirs = []
@@ -131,14 +134,13 @@ function! s:cmd_for(name) abort
 endfunction
 
 function! s:source.hooks.on_init(args, context)
-    if filereadable(g:unite_source_go_import_cache_path) 
+    if filereadable(g:unite_source_go_import_cache_path)
         let s:cached_result = readfile(g:unite_source_go_import_cache_path)
         " echomsg "Load from cache file"
     endif
 endfunction
 
-function! s:source.hooks.on_close(args, context) 
-    call unite#filters#matcher_py_fuzzy#clean(a:context)
+function! s:source.hooks.on_close(args, context)
 endfunction
 
 function! s:source.gather_candidates(args, context) abort
@@ -151,8 +153,8 @@ function! s:source.gather_candidates(args, context) abort
     endif
 
     let a:context.mmode = "path"
-    let result = unite#filters#matcher_py_fuzzy#matcher(a:context, s:cached_result, 1)
-    if len(result) > g:unite_source_go_import_max_candidates 
+    let result = unite#filters#matcher_py_fuzzy#matcher(a:context, s:cached_result, 50)
+    if len(result) > g:unite_source_go_import_max_candidates
         let result = result[0:g:unite_source_go_import_max_candidates - 1]
     endif
 
