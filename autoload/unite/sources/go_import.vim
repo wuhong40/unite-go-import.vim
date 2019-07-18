@@ -153,6 +153,7 @@ function! s:source.gather_candidates(args, context) abort
     endif
 
     let a:context.mmode = "path"
+    let a:context.cache_type = "goimport"
     let result = unite#filters#matcher_py_fuzzy#matcher(a:context, s:cached_result, 50)
     if len(result) > g:unite_source_go_import_max_candidates
         let result = result[0:g:unite_source_go_import_max_candidates - 1]
