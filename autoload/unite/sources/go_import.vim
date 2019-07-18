@@ -155,6 +155,10 @@ function! s:source.gather_candidates(args, context) abort
         endif
     endif
 
+    if a:context.is_redraw
+        call unite#filters#matcher_py_fuzzy#clearcache(s:cache_key)
+    endif
+
     let a:context.mmode = "path"
     let a:context.cache_type = s:cache_key
     let result = unite#filters#matcher_py_fuzzy#matcher(a:context, 50)
