@@ -18,6 +18,7 @@ let s:source = {
     \ }
 
 let s:cached_result = []
+let s:cache_key = "goimports"
 
 function! unite#sources#go_import#define() abort
     if s:cmd_for('import') ==# ''
@@ -136,6 +137,7 @@ endfunction
 function! s:source.hooks.on_init(args, context)
     if filereadable(g:unite_source_go_import_cache_path)
         let s:cached_result = readfile(g:unite_source_go_import_cache_path)
+        call unite#filters#matcher_py_fuzzy#setcandidates(s:cache_key, s:cached_result)
         " echomsg "Load from cache file"
     endif
 endfunction
@@ -147,14 +149,15 @@ function! s:source.gather_candidates(args, context) abort
     if !g:unite_source_go_import_disable_cache &&
         \ (empty(s:cached_result) || a:args == ['!'] || a:context.is_redraw)
         let s:cached_result = s:go_packages()
+        call unite#filters#matcher_py_fuzzy#setcandidates(s:cache_key, s:cached_result)
         if g:unite_source_go_import_cache_path != ''
             call writefile(s:cached_result, g:unite_source_go_import_cache_path)
         endif
     endif
 
     let a:context.mmode = "path"
-    let a:context.cache_type = "goimport"
-    let result = unite#filters#matcher_py_fuzzy#matcher(a:context, s:cached_result, 50)
+    let a:context.cache_type = s:cache_key
+    let result = unite#filters#matcher_py_fuzzy#matcher(a:context, 50)
     if len(result) > g:unite_source_go_import_max_candidates
         let result = result[0:g:unite_source_go_import_max_candidates - 1]
     endif
